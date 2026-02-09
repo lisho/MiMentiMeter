@@ -1,0 +1,117 @@
+.container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+    background:
+        radial-gradient(circle at 30% 30%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+        var(--bg-dark);
+}
+
+.content {
+    width: 100%;
+    max-width: 500px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.logo {
+    display: block;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: var(--spacing-xl);
+    text-decoration: none;
+}
+
+.logoGradient {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2xl);
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+}
+
+.icon {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+.card h1 {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.form {
+    margin-top: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.codeInput {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: var(--spacing-lg);
+}
+
+.divider {
+    margin: var(--spacing-xl) 0;
+    position: relative;
+    text-align: center;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
+}
+
+.divider span {
+    position: relative;
+    background: var(--bg-card);
+    padding: 0 var(--spacing-md);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.help {
+    text-align: center;
+    margin-top: var(--spacing-lg);
+}
+
+.help a {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .card {
+        padding: var(--spacing-xl);
+    }
+
+    .card h1 {
+        font-size: 1.75rem;
+    }
+
+    .codeInput {
+        font-size: 1.25rem;
+    }
+}
