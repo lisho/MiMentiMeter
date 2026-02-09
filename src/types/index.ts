@@ -26,6 +26,7 @@ export type ActivityType =
     | 'scale'
     | 'quiz'
     | 'true_false'
+    | 'image_choice'
 
 export interface Activity {
     id: string
@@ -105,6 +106,15 @@ export interface TrueFalseOptions {
     points: number
 }
 
+export interface ImageChoiceOptions {
+    choices: Array<{
+        id: string
+        text: string
+        image_url: string
+    }>
+    allow_multiple: boolean
+}
+
 export type ActivityOptions =
     | MultipleChoiceOptions
     | WordCloudOptions
@@ -112,6 +122,7 @@ export type ActivityOptions =
     | ScaleOptions
     | QuizOptions
     | TrueFalseOptions
+    | ImageChoiceOptions
 
 export interface ActivitySettings {
     show_results_immediately: boolean
@@ -130,6 +141,7 @@ export type ResponseAnswer =
     | { type: 'scale'; value: number }
     | { type: 'quiz'; choice_id: string; time_taken: number }
     | { type: 'true_false'; answer: boolean; time_taken: number }
+    | { type: 'image_choice'; choice_ids: string[] }
 
 // ============================================
 // Resultados Agregados
@@ -202,6 +214,18 @@ export type ActivityResults =
     | ScaleResults
     | QuizResults
     | TrueFalseResults
+    | ImageChoiceResults
+
+export interface ImageChoiceResults {
+    total_responses: number
+    choices: Array<{
+        id: string
+        text: string
+        image_url: string
+        count: number
+        percentage: number
+    }>
+}
 
 // ============================================
 // WebSocket Events

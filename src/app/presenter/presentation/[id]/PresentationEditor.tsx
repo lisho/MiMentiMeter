@@ -15,7 +15,7 @@ import styles from './presentation.module.css'
 interface PresentationEditorProps {
     presentation: Presentation
     initialActivities: Activity[]
-    initialSessions: Session[]
+    initialSessions: (Session & { response_count?: number })[]
 }
 
 const activityTypeLabels: Record<ActivityType, string> = {
@@ -25,6 +25,7 @@ const activityTypeLabels: Record<ActivityType, string> = {
     scale: 'Escala',
     quiz: 'Quiz',
     true_false: 'Verdadero/Falso',
+    image_choice: 'Opción con Imágenes',
 }
 
 const activityTypeIcons: Record<ActivityType, string> = {
@@ -34,12 +35,13 @@ const activityTypeIcons: Record<ActivityType, string> = {
     scale: '📏',
     quiz: '🎯',
     true_false: '✅',
+    image_choice: '🖼️',
 }
 
 export function PresentationEditor({ presentation, initialActivities, initialSessions }: PresentationEditorProps) {
     const router = useRouter()
     const [activities, setActivities] = useState<Activity[]>(initialActivities)
-    const [sessions, setSessions] = useState<Session[]>(initialSessions)
+    const [sessions, setSessions] = useState<(Session & { response_count?: number })[]>(initialSessions)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [sessionViewMode, setSessionViewMode] = useState<'grid' | 'list'>('grid')
     const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
@@ -234,6 +236,11 @@ export function PresentationEditor({ presentation, initialActivities, initialSes
                                                 minute: '2-digit'
                                             })}
                                         </span>
+                                        <div className={styles.sessionStatsSummary}>
+                                            <span className={styles.statItem}>
+                                                <strong>{session.response_count || 0}</strong> respuestas
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className={styles.sessionStatus}>
                                         {session.is_live ? (

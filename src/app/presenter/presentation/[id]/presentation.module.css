@@ -410,6 +410,24 @@
     color: var(--text-muted);
 }
 
+.sessionStatsSummary {
+    margin-top: var(--spacing-xs);
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.statItem {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.statItem strong {
+    color: #818cf8;
+}
+
 .sessionStatus {
     flex-shrink: 0;
 }

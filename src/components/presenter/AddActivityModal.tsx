@@ -51,6 +51,12 @@ const activityTypes: { type: ActivityType; label: string; icon: string; descript
         icon: '✅',
         description: 'Preguntas de verdadero o falso'
     },
+    {
+        type: 'image_choice',
+        label: 'Opción con Imágenes',
+        icon: '🖼️',
+        description: 'Los participantes eligen entre imágenes o iconos'
+    },
 ]
 
 export function AddActivityModal({ isOpen, onClose, onAdd }: AddActivityModalProps) {
@@ -99,6 +105,16 @@ export function AddActivityModal({ isOpen, onClose, onAdd }: AddActivityModalPro
                 break
             case 'true_false':
                 activityOptions = { correct_answer: true, time_limit: 15, points: 100 }
+                break
+            case 'image_choice':
+                activityOptions = {
+                    choices: options.filter(o => o.trim()).map((text, i) => ({
+                        id: String(i),
+                        text,
+                        image_url: 'https://placehold.co/400x300?text=' + encodeURIComponent(text)
+                    })),
+                    allow_multiple: false
+                }
                 break
         }
 
@@ -183,7 +199,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd }: AddActivityModalPro
                             />
                         </div>
 
-                        {(selectedType === 'multiple_choice' || selectedType === 'quiz') && (
+                        {(selectedType === 'multiple_choice' || selectedType === 'quiz' || selectedType === 'image_choice') && (
                             <div className={styles.field}>
                                 <label>Opciones</label>
                                 <div className={styles.optionsList}>

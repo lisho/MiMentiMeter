@@ -169,6 +169,9 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
             case 'true_false':
                 answer = { type: 'true_false', answer: selectedAnswer as boolean, time_taken: 0 }
                 break
+            case 'image_choice':
+                answer = { type: 'image_choice', choice_ids: Array.isArray(selectedAnswer) ? selectedAnswer : [selectedAnswer as string] }
+                break
             default:
                 answer = { type: currentActivity.type, value: selectedAnswer }
         }
@@ -196,16 +199,91 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
                 const choices = 'choices' in currentActivity.options
                     ? (currentActivity.options as { choices: { id: string; text: string }[] }).choices
                     : []
+                const isMultiple = 'allow_multiple' in currentActivity.options && (currentActivity.options as any).allow_multiple
+
+                const toggleSelection = (id: string) => {
+                    if (isMultiple) {
+                        const current = Array.isArray(selectedAnswer) ? selectedAnswer : []
+                        if (current.includes(id)) {
+                            setSelectedAnswer(current.filter(item => item !== id))
+                        } else {
+                            setSelectedAnswer([...current, id])
+                        }
+                    } else {
+                        setSelectedAnswer(id)
+                    }
+                }
+
+                const isSelected = (id: string) => {
+                    if (isMultiple) {
+                        return Array.isArray(selectedAnswer) && selectedAnswer.includes(id)
+                    }
+                    return selectedAnswer === id
+                }
+
                 return (
                     <div className={styles.choicesGrid}>
                         {choices.map((choice, i) => (
                             <button
                                 key={choice.id}
-                                className={`${styles.choiceButton} ${selectedAnswer === choice.id ? styles.selected : ''}`}
-                                onClick={() => setSelectedAnswer(choice.id)}
+                                className={`${styles.choiceButton} ${isSelected(choice.id) ? styles.selected : ''}`}
+                                onClick={() => toggleSelection(choice.id)}
                             >
-                                <span className={styles.choiceLetter}>{String.fromCharCode(65 + i)}</span>
+                                <div className={styles.choiceHeader}>
+                                    <span className={styles.choiceLetter}>{String.fromCharCode(65 + i)}</span>
+                                    {isMultiple && (
+                                        <div className={`${styles.checkbox} ${isSelected(choice.id) ? styles.checked : ''}`}>
+                                            {isSelected(choice.id) && '✓'}
+                                        </div>
+                                    )}
+                                </div>
                                 <span className={styles.choiceText}>{choice.text}</span>
+                            </button>
+                        ))}
+                    </div>
+                )
+
+            case 'image_choice':
+                const imgChoices = 'choices' in currentActivity.options
+                    ? (currentActivity.options as { choices: { id: string; text: string; image_url: string }[] }).choices
+                    : []
+                const isMultipleImg = 'allow_multiple' in currentActivity.options && (currentActivity.options as any).allow_multiple
+
+                const toggleImgSelection = (id: string) => {
+                    if (isMultipleImg) {
+                        const current = Array.isArray(selectedAnswer) ? selectedAnswer : []
+                        if (current.includes(id)) {
+                            setSelectedAnswer(current.filter(item => item !== id))
+                        } else {
+                            setSelectedAnswer([...current, id])
+                        }
+                    } else {
+                        setSelectedAnswer(id)
+                    }
+                }
+
+                const isImgSelected = (id: string) => {
+                    if (isMultipleImg) {
+                        return Array.isArray(selectedAnswer) && selectedAnswer.includes(id)
+                    }
+                    return selectedAnswer === id
+                }
+
+                return (
+                    <div className={styles.imageChoicesGrid}>
+                        {imgChoices.map((choice) => (
+                            <button
+                                key={choice.id}
+                                className={`${styles.imageChoiceCard} ${isImgSelected(choice.id) ? styles.selected : ''}`}
+                                onClick={() => toggleImgSelection(choice.id)}
+                            >
+                                <div className={styles.imageChoiceWrapper}>
+                                    {choice.image_url && <img src={choice.image_url} alt={choice.text} />}
+                                    <div className={`${styles.imageCheck} ${isImgSelected(choice.id) ? styles.checked : ''}`}>
+                                        {isImgSelected(choice.id) && '✓'}
+                                    </div>
+                                </div>
+                                <span className={styles.imageChoiceText}>{choice.text}</span>
                             </button>
                         ))}
                     </div>
@@ -362,7 +440,7 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
                         <Button
                             onClick={handleSubmitResponse}
                             isLoading={submitting}
-                            disabled={selectedAnswer === null || submitting}
+                            disabled={selectedAnswer === null || (Array.isArray(selectedAnswer) && selectedAnswer.length === 0) || submitting}
                             className={styles.submitButton}
                         >
                             Enviar respuesta

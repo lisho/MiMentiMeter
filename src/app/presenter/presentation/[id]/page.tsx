@@ -28,15 +28,23 @@ export default async function PresentationPage({ params }: PageProps) {
 
     const { data: sessions } = await supabase
         .from('sessions')
-        .select('*')
+        .select(`
+            *,
+            responses:responses(count)
+        `)
         .eq('presentation_id', params.id)
         .order('created_at', { ascending: false })
+
+    const processedSessions = (sessions || []).map(s => ({
+        ...s,
+        response_count: s.responses?.[0]?.count || 0
+    }))
 
     return (
         <PresentationEditor
             presentation={presentation}
             initialActivities={activities || []}
-            initialSessions={sessions || []}
+            initialSessions={processedSessions}
         />
     )
 }

@@ -97,6 +97,9 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
             case 'open_text':
                 return <OpenTextResults responses={responses} total={totalResponses} />
 
+            case 'image_choice':
+                return <ImageChoiceResults activity={activity} responses={responses} total={totalResponses} />
+
             default:
                 return <div className={styles.noResults}>No hay visualización disponible para este tipo de actividad</div>
         }
@@ -295,6 +298,46 @@ function OpenTextResults({ responses, total }: { responses: Response[]; total: n
                 <div key={r.id} className={styles.textResponse}>
                     <span className={styles.responseNumber}>#{i + 1}</span>
                     <p>{r.answer.text}</p>
+                </div>
+            ))}
+        </div>
+    )
+}
+// Image Choice Results
+function ImageChoiceResults({ activity, responses, total }: { activity: Activity; responses: Response[]; total: number }) {
+    const choices = 'choices' in activity.options
+        ? (activity.options as { choices: { id: string; text: string; image_url: string }[] }).choices
+        : []
+
+    const counts = choices.map(choice => {
+        const count = responses.filter(r =>
+            r.answer.choice_ids?.includes(choice.id) || r.answer.choice_id === choice.id
+        ).length
+        return { ...choice, count, percentage: total > 0 ? (count / total) * 100 : 0 }
+    })
+
+    const maxCount = Math.max(...counts.map(c => c.count), 1)
+
+    return (
+        <div className={styles.imageGridResults}>
+            {counts.map((choice) => (
+                <div key={choice.id} className={styles.imageResultCard}>
+                    <div className={styles.imageWrapper}>
+                        {choice.image_url && <img src={choice.image_url} alt={choice.text} />}
+                        <div className={styles.imageVoteBadge}>
+                            {choice.count}
+                        </div>
+                    </div>
+                    <div className={styles.imageResultInfo}>
+                        <span className={styles.imageResultText}>{choice.text}</span>
+                        <div className={styles.imageResultBar}>
+                            <div
+                                className={styles.imageResultBarFill}
+                                style={{ width: `${(choice.count / maxCount) * 100}%` }}
+                            ></div>
+                        </div>
+                        <span className={styles.imageResultPercent}>{choice.percentage.toFixed(0)}%</span>
+                    </div>
                 </div>
             ))}
         </div>

@@ -22,6 +22,7 @@ const activityTypeLabels: Record<ActivityType, string> = {
     scale: 'Escala',
     quiz: 'Quiz',
     true_false: 'Verdadero/Falso',
+    image_choice: 'Opción con Imágenes',
 }
 
 const activityTypeIcons: Record<ActivityType, string> = {
@@ -31,6 +32,7 @@ const activityTypeIcons: Record<ActivityType, string> = {
     scale: '📏',
     quiz: '🎯',
     true_false: '✅',
+    image_choice: '🖼️',
 }
 
 export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorProps) {
@@ -39,6 +41,14 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         'choices' in activity.options
             ? (activity.options as { choices: { text: string }[] }).choices.map(c => c.text)
             : ['', '']
+    )
+    const [imageUrls, setImageUrls] = useState<string[]>(
+        'choices' in activity.options && activity.type === 'image_choice'
+            ? (activity.options as any).choices.map((c: any) => c.image_url || '')
+            : options.map(() => '')
+    )
+    const [allowMultiple, setAllowMultiple] = useState<boolean>(
+        'allow_multiple' in activity.options ? (activity.options as any).allow_multiple : false
     )
 
     // Scale states
@@ -71,6 +81,13 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         setHasChanges(true)
     }
 
+    const handleImageUrlChange = (index: number, value: string) => {
+        const newUrls = [...imageUrls]
+        newUrls[index] = value
+        setImageUrls(newUrls)
+        setHasChanges(true)
+    }
+
     const handleSetCorrect = (index: number) => {
         if (activity.type === 'quiz') {
             setCorrectIndex(index)
@@ -80,12 +97,15 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
 
     const addOption = () => {
         setOptions([...options, ''])
+        setImageUrls([...imageUrls, ''])
         setHasChanges(true)
     }
 
     const removeOption = (index: number) => {
         const newOptions = options.filter((_, i) => i !== index)
+        const newUrls = imageUrls.filter((_, i) => i !== index)
         setOptions(newOptions)
+        setImageUrls(newUrls)
 
         // If we removed the correct option, reset to first
         if (correctIndex === index) {
@@ -105,16 +125,19 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         formData.append('question', question)
 
         let updatedOptions = activity.options
-        if (activity.type === 'multiple_choice' || activity.type === 'quiz') {
+        if (activity.type === 'multiple_choice' || activity.type === 'quiz' || activity.type === 'image_choice') {
             const isQuiz = activity.type === 'quiz'
+            const isImage = activity.type === 'image_choice'
             const baseOptions = activity.options as any
             updatedOptions = {
                 ...baseOptions,
                 choices: options.filter(o => o.trim()).map((text, i) => ({
                     id: String(i),
                     text,
-                    ...(isQuiz ? { is_correct: i === correctIndex } : {})
-                }))
+                    ...(isQuiz ? { is_correct: i === correctIndex } : {}),
+                    ...(isImage ? { image_url: imageUrls[i] } : {})
+                })),
+                ...(activity.type === 'multiple_choice' || isImage ? { allow_multiple: allowMultiple } : {})
             }
         } else if (activity.type === 'scale') {
             updatedOptions = {
@@ -168,38 +191,66 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
                 />
             </div>
 
-            {(activity.type === 'multiple_choice' || activity.type === 'quiz') && (
+            {(activity.type === 'multiple_choice' || activity.type === 'quiz' || activity.type === 'image_choice') && (
                 <div className={styles.field}>
-                    <label>Opciones de respuesta</label>
+                    <div className={styles.fieldHeader}>
+                        <label>Opciones de respuesta</label>
+                        {(activity.type === 'multiple_choice' || activity.type === 'image_choice') && (
+                            <label className={styles.checkboxLabel}>
+                                <input
+                                    type="checkbox"
+                                    checked={allowMultiple}
+                                    onChange={(e) => { setAllowMultiple(e.target.checked); setHasChanges(true); }}
+                                />
+                                Permitir seleccionar varias
+                            </label>
+                        )}
+                    </div>
                     <div className={styles.optionsList}>
                         {options.map((option, index) => (
-                            <div key={index} className={styles.optionRow}>
-                                <div className={styles.optionIndex}>{index + 1}</div>
-                                <Input
-                                    value={option}
-                                    onChange={(e) => handleOptionChange(index, e.target.value)}
-                                    placeholder={`Opción ${index + 1}`}
-                                />
-                                {activity.type === 'quiz' && (
-                                    <div
-                                        className={`${styles.correctBadge} ${index === correctIndex ? styles.correct : ''}`}
-                                        onClick={() => handleSetCorrect(index)}
-                                        title="Marcar como respuesta correcta"
-                                    >
-                                        {index === correctIndex ? '✓' : ''}
+                            <div key={index} className={styles.optionContainer}>
+                                <div className={styles.optionRow}>
+                                    <div className={styles.optionIndex}>{index + 1}</div>
+                                    <Input
+                                        value={option}
+                                        onChange={(e) => handleOptionChange(index, e.target.value)}
+                                        placeholder={`Etiqueta de la opción ${index + 1}`}
+                                    />
+                                    {activity.type === 'quiz' && (
+                                        <div
+                                            className={`${styles.correctBadge} ${index === correctIndex ? styles.correct : ''}`}
+                                            onClick={() => handleSetCorrect(index)}
+                                            title="Marcar como respuesta correcta"
+                                        >
+                                            {index === correctIndex ? '✓' : ''}
+                                        </div>
+                                    )}
+                                    {options.length > 2 && (
+                                        <button
+                                            className={styles.removeOption}
+                                            onClick={() => removeOption(index)}
+                                            aria-label="Eliminar opción"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                                {activity.type === 'image_choice' && (
+                                    <div className={styles.imageInputRow}>
+                                        <Input
+                                            value={imageUrls[index]}
+                                            onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                                            placeholder="URL de la imagen (e.g. https://...)"
+                                        />
+                                        {imageUrls[index] && (
+                                            <div className={styles.imagePreviewSmall}>
+                                                <img src={imageUrls[index]} alt="Preview" />
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                                {options.length > 2 && (
-                                    <button
-                                        className={styles.removeOption}
-                                        onClick={() => removeOption(index)}
-                                        aria-label="Eliminar opción"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <line x1="18" y1="6" x2="6" y2="18" />
-                                            <line x1="6" y1="6" x2="18" y2="18" />
-                                        </svg>
-                                    </button>
                                 )}
                             </div>
                         ))}
