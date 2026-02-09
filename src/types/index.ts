@@ -44,8 +44,10 @@ export interface Session {
     presentation_id: string
     access_code: string
     is_live: boolean
+    current_activity_index: number
     started_at: string | null
     ended_at: string | null
+    created_at: string
 }
 
 export interface Response {

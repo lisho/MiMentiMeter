@@ -1,18 +1,53 @@
+
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { joinSession } from '../actions'
 import styles from './join.module.css'
 
 export default function ParticipantJoin() {
+    const router = useRouter()
+    const searchParams = useSearchParams()
     const [code, setCode] = useState('')
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(false)
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        if (code.trim()) {
-            // TODO: Validar código y redirigir a la sesión
-            window.location.href = `/participant/session/${code.toUpperCase()}`
+    // Check if code is provided in URL (from QR scan)
+    useEffect(() => {
+        const codeFromUrl = searchParams.get('code')
+        if (codeFromUrl) {
+            setCode(codeFromUrl.toUpperCase())
+            // Auto-submit if code is provided
+            handleJoinWithCode(codeFromUrl)
         }
+    }, [searchParams])
+
+    const handleJoinWithCode = async (accessCode: string) => {
+        setLoading(true)
+        setError(null)
+
+        const result = await joinSession(accessCode)
+
+        if (result.error) {
+            setError(result.error)
+            setLoading(false)
+            return
+        }
+
+        if (result.data) {
+            // Store session info and redirect
+            sessionStorage.setItem('sessionId', result.data.sessionId)
+            sessionStorage.setItem('presentationTitle', result.data.presentationTitle)
+            router.push(`/participant/session/${result.data.sessionId}`)
+        }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (code.trim().length < 3) return
+        await handleJoinWithCode(code)
     }
 
     return (
@@ -32,33 +67,35 @@ export default function ParticipantJoin() {
                     <form onSubmit={handleSubmit} className={styles.form}>
                         <input
                             type="text"
-                            className={`input ${styles.codeInput}`}
+                            className={`input ${styles.codeInput} ${error ? styles.inputError : ''}`}
                             placeholder="Ej: ABC123"
                             value={code}
-                            onChange={(e) => setCode(e.target.value.toUpperCase())}
+                            onChange={(e) => {
+                                setCode(e.target.value.toUpperCase())
+                                setError(null)
+                            }}
                             maxLength={6}
                             autoFocus
+                            disabled={loading}
                         />
+
+                        {error && <p className={styles.error}>{error}</p>}
+
                         <button
                             type="submit"
-                            className="btn btn-primary btn-lg"
-                            disabled={code.length < 3}
+                            className={`btn btn-primary btn-lg ${loading ? 'opacity-70' : ''}`}
+                            disabled={code.length < 3 || loading}
                         >
-                            Unirse
+                            {loading ? (
+                                <>
+                                    <span className={styles.spinner}></span>
+                                    Conectando...
+                                </>
+                            ) : (
+                                'Unirse'
+                            )}
                         </button>
                     </form>
-
-                    <div className={styles.divider}>
-                        <span>o</span>
-                    </div>
-
-                    <button className="btn btn-secondary">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                            <path d="M9 9h6v6H9z" />
-                        </svg>
-                        Escanear Código QR
-                    </button>
                 </div>
 
                 <div className={styles.help}>

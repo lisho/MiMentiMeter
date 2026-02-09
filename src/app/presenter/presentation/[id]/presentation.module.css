@@ -1,0 +1,514 @@
+.container {
+    min-height: 100vh;
+    background: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: var(--spacing-md) 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.headerContent {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    min-width: 0;
+}
+
+.backButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.backButton:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.description {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.headerActions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.startBtn {
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%) !important;
+    border: none !important;
+    font-weight: 600 !important;
+    padding: 0.6rem 1.5rem !important;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3) !important;
+}
+
+/* Editor Layout */
+.editor {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    padding: var(--spacing-lg);
+    gap: var(--spacing-lg);
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    background: rgba(15, 23, 42, 0.4);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: var(--spacing-md);
+}
+
+.sidebarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebarHeader h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.addButton:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
+}
+
+.activityList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    overflow-y: auto;
+}
+
+.emptyActivities {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    text-align: center;
+    gap: var(--spacing-md);
+    color: var(--text-muted);
+}
+
+.activityItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid transparent;
+}
+
+.activityItem:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.activityItem.selected {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: #6366f1;
+}
+
+.activityIndex {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    width: 14px;
+    text-align: center;
+}
+
+.activityItem.selected .activityIndex {
+    background: var(--primary);
+    color: white;
+}
+
+.activityIcon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.activityInfo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.activityType {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.activityQuestion {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Main Content */
+.main {
+    flex: 1;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+}
+
+.emptyEditor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 400px;
+    text-align: center;
+    gap: var(--spacing-md);
+}
+
+.emptyIcon {
+    font-size: 4rem;
+    opacity: 0.5;
+}
+
+.emptyEditor h3 {
+    margin: 0;
+}
+
+.emptyEditor p {
+    color: var(--text-muted);
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .editor {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        max-height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .activityList {
+        display: flex;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+        overflow-x: auto;
+    }
+
+    .activityItem {
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+}
+
+/* Sessions Section */
+.sessionsSection {
+    width: 100%;
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-3xl);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sectionTitle {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.sessionsHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.viewToggle {
+    display: flex;
+    background: rgba(30, 41, 59, 0.8);
+    padding: 3px;
+    border-radius: var(--radius-md);
+}
+
+.toggleBtn {
+    padding: 4px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.toggleBtn:hover {
+    color: var(--text-primary);
+}
+
+.toggleBtn.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+}
+
+.sessionsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    width: 100%;
+}
+
+.sessionsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.sessionCard {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding: var(--spacing-lg) !important;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    transition: all var(--transition-normal);
+}
+
+.sessionListItem {
+    padding: var(--spacing-md) var(--spacing-lg);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-lg);
+    transition: all var(--transition-normal);
+}
+
+.sessionListItem .sessionHeader {
+    flex: 1;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.sessionListItem .sessionInfo {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.sessionListItem .sessionActions {
+    border-top: none;
+    padding-top: 0;
+    width: auto;
+}
+
+.sessionCard:hover,
+.sessionListItem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.15);
+}
+
+.sessionHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.sessionInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sessionCode {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.sessionCode strong {
+    color: #818cf8;
+    font-family: inherit;
+}
+
+.sessionDate {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.sessionStatus {
+    flex-shrink: 0;
+}
+
+.statusLive {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    animation: pulseActive 2s infinite;
+}
+
+@keyframes pulseActive {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.statusEnded {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    height: fit-content;
+}
+
+.sessionActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    border-top: none !important;
+    padding-top: 0 !important;
+}
+
+.sessionActions button {
+    flex: 1;
+}
+
+.actionBtn {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    font-size: 0.75rem !important;
+    padding: 0.5rem !important;
+    height: auto !important;
+}
+
+.actionBtn:hover {
+    background: rgba(99, 102, 241, 0.2) !important;
+    border-color: #818cf8 !important;
+}
+
+@media (max-width: 768px) {
+    .editor {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        max-height: 200px;
+    }
+
+    .sessionActions {
+        flex-direction: column;
+    }
+}
+
+.footer {
+    margin-top: auto;
+    padding: var(--spacing-2xl) 0 var(--spacing-xl);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(15, 23, 42, 0.2);
+}
+
+.footerContent {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+    text-align: center;
+}
+
+.footerContent p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+}
