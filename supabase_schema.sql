@@ -135,22 +135,25 @@ create table responses (
   session_id uuid references sessions(id) on delete cascade not null,
   participant_id uuid references participants(id) on delete cascade not null,
   answer jsonb not null, -- Stores ResponseAnswer
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  unique(activity_id, participant_id) -- Only one response per activity per participant? (Modify if multiple allowed)
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  -- NOTE: No unique constraint on (activity_id, participant_id) because
+  -- multiple responses per participant are allowed based on activity settings
+  -- (max_responses_per_participant). The limit is enforced at the application level.
 );
 
 -- RLS for Responses
 alter table responses enable row level security;
-create policy "Participants can insert their responses" on responses for insert with check (true);
-create policy "Presenters can view responses for their sessions" on responses
-  for select using (
-    exists (
-      select 1 from sessions
-      join presentations on sessions.presentation_id = presentations.id
-      where sessions.id = responses.session_id
-      and presentations.user_id = auth.uid()
-    )
-  );
+
+-- Allow anonymous response submission
+create policy "Allow anonymous response submission" on responses 
+  for insert with check (true);
+
+-- Allow reading responses
+-- Necessary for participants to check their own response limits
+-- and for presenters/results visualization to receive Realtime updates
+create policy "Allow reading responses" on responses 
+  for select using (true);
+
 
 -- Realtime subscription setup (optional enablement)
 alter publication supabase_realtime add table sessions;

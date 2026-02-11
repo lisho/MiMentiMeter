@@ -178,6 +178,11 @@ export async function createSession(presentationId: string) {
 
 export async function endSession(sessionId: string) {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'No autenticado' }
+    }
 
     const { error } = await supabase
         .from('sessions')
@@ -197,18 +202,34 @@ export async function endSession(sessionId: string) {
 
 export async function updateCurrentActivity(sessionId: string, activityIndex: number) {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    const { error } = await supabase
+    if (!user) {
+        return { error: 'No autenticado' }
+    }
+
+    console.log('[updateCurrentActivity] User:', user.id, 'Session:', sessionId, 'Index:', activityIndex)
+
+    const { data, error } = await supabase
         .from('sessions')
         .update({
             current_activity_index: activityIndex,
         })
         .eq('id', sessionId)
+        .select()
+        .single()
 
     if (error) {
+        console.error('[updateCurrentActivity] Error:', error.message)
         return { error: error.message }
     }
 
+    if (!data) {
+        console.error('[updateCurrentActivity] No data returned - update may have been blocked')
+        return { error: 'No se pudo actualizar la actividad actual' }
+    }
+
+    console.log('[updateCurrentActivity] SUCCESS - current_activity_index:', data.current_activity_index)
     return { error: null }
 }
 
@@ -308,7 +329,7 @@ export async function createActivity(formData: FormData) {
             type,
             question,
             options: JSON.parse(optionsJson || '{}'),
-            settings: JSON.parse(settingsJson || '{"show_results_immediately": true, "allow_anonymous": true, "require_name": false}'),
+            settings: JSON.parse(settingsJson || '{"show_results_immediately": true, "allow_anonymous": true, "require_name": false, "max_responses_per_participant": 1}'),
             order_index: nextOrderIndex,
         })
         .select()
@@ -324,29 +345,77 @@ export async function createActivity(formData: FormData) {
 
 export async function updateActivity(formData: FormData) {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'No autenticado' }
+    }
 
     const id = formData.get('id') as string
+    const presentationId = formData.get('presentation_id') as string
     const question = formData.get('question') as string
     const optionsJson = formData.get('options') as string
+    const settingsJson = formData.get('settings') as string
 
-    const { error } = await supabase
+    // Verify the presentation belongs to this user
+    const { data: presentation } = await supabase
+        .from('presentations')
+        .select('id')
+        .eq('id', presentationId)
+        .eq('user_id', user.id)
+        .single()
+
+    if (!presentation) {
+        return { error: 'No tienes permiso para editar esta presentación' }
+    }
+
+    const parsedOptions = JSON.parse(optionsJson || '{}')
+    const parsedSettings = settingsJson ? JSON.parse(settingsJson) : undefined
+
+    const updateData: Record<string, any> = {
+        question,
+        options: parsedOptions,
+    }
+
+    if (parsedSettings !== undefined) {
+        updateData.settings = parsedSettings
+    }
+
+    console.log('[updateActivity] User:', user.id, 'Activity:', id)
+    console.log('[updateActivity] Settings to save:', JSON.stringify(parsedSettings))
+
+    const { data, error } = await supabase
         .from('activities')
-        .update({
-            question,
-            options: JSON.parse(optionsJson || '{}'),
-        })
+        .update(updateData)
         .eq('id', id)
+        .eq('presentation_id', presentationId)
+        .select()
+        .single()
 
     if (error) {
+        console.error('[updateActivity] Supabase error:', error.message, error.code)
         return { error: error.message }
     }
 
+    if (!data) {
+        console.error('[updateActivity] No data returned - update may have been blocked')
+        return { error: 'No se pudo actualizar la actividad' }
+    }
+
+    console.log('[updateActivity] SUCCESS - Saved settings:', JSON.stringify(data.settings))
+
+    revalidatePath(`/presenter/presentation/${presentationId}`)
     revalidatePath('/presenter')
-    return { error: null }
+    return { error: null, data }
 }
 
 export async function deleteActivity(id: string, presentationId: string) {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'No autenticado' }
+    }
 
     const { error } = await supabase
         .from('activities')
@@ -363,6 +432,11 @@ export async function deleteActivity(id: string, presentationId: string) {
 
 export async function reorderActivities(presentationId: string, orderedIds: string[]) {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'No autenticado' }
+    }
 
     const updates = orderedIds.map((id, index) =>
         supabase

@@ -150,6 +150,35 @@
     object-fit: cover;
 }
 
+.settingsSection {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settingsTitle {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+.responseLimit {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.responseLimit input[type="number"] {
+    max-width: 150px;
+}
+
+.helpText {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: var(--spacing-xs) 0 0 0;
+    font-style: italic;
+}
 
 .field {
     display: flex;

@@ -25,6 +25,7 @@ const activityTypeIcons: Record<ActivityType, string> = {
     scale: '📏',
     quiz: '🎯',
     true_false: '✅',
+    image_choice: '🖼️',
 }
 
 export function LivePresenter({ session, presentation, activities }: LivePresenterProps) {
@@ -104,9 +105,16 @@ export function LivePresenter({ session, presentation, activities }: LivePresent
                     table: 'responses',
                     filter: `session_id=eq.${session.id}`
                 },
-                () => {
-                    console.log('⚡ Evento Realtime detectado!')
-                    loadData()
+                (payload) => {
+                    console.log('⚡ Nueva respuesta detectada:', payload.new)
+                    const newResponse = payload.new as { activity_id: string }
+
+                    // Incrementar el contador de la actividad específica
+                    setResponses(prev => ({
+                        ...prev,
+                        [newResponse.activity_id]: (prev[newResponse.activity_id] || 0) + 1
+                    }))
+                    setLastUpdated(new Date())
                 }
             )
             .on(
@@ -151,18 +159,28 @@ export function LivePresenter({ session, presentation, activities }: LivePresent
     const goToNext = async () => {
         if (currentIndex < activities.length - 1) {
             const newIndex = currentIndex + 1
+            const prevIndex = currentIndex
             setCurrentIndex(newIndex)
             setShowResults(false)
-            await updateCurrentActivity(session.id, newIndex)
+            const result = await updateCurrentActivity(session.id, newIndex)
+            if (result.error) {
+                console.error('Error updating activity:', result.error)
+                setCurrentIndex(prevIndex) // Revert on failure
+            }
         }
     }
 
     const goToPrev = async () => {
         if (currentIndex > 0) {
             const newIndex = currentIndex - 1
+            const prevIndex = currentIndex
             setCurrentIndex(newIndex)
             setShowResults(false)
-            await updateCurrentActivity(session.id, newIndex)
+            const result = await updateCurrentActivity(session.id, newIndex)
+            if (result.error) {
+                console.error('Error updating activity:', result.error)
+                setCurrentIndex(prevIndex) // Revert on failure
+            }
         }
     }
 

@@ -98,19 +98,37 @@ export async function submitResponse(
 ) {
     const supabase = createClient()
 
-    // Check if participant already responded
-    const { data: existing } = await supabase
-        .from('responses')
-        .select('id')
-        .eq('activity_id', activityId)
-        .eq('participant_id', participantId)
+    // Get activity settings to check max responses
+    const { data: activity } = await supabase
+        .from('activities')
+        .select('settings')
+        .eq('id', activityId)
         .single()
 
-    if (existing) {
-        return { error: 'Ya has respondido a esta pregunta', data: null }
+    if (!activity) {
+        return { error: 'Actividad no encontrada', data: null }
     }
 
-    const { error } = await supabase
+    const maxResponses = activity.settings?.max_responses_per_participant
+
+    // Count existing responses from this participant
+    const { count } = await supabase
+        .from('responses')
+        .select('id', { count: 'exact', head: true })
+        .eq('activity_id', activityId)
+        .eq('participant_id', participantId)
+
+    // Check if limit is reached (if limit is set)
+    if (maxResponses !== null && maxResponses !== undefined && count !== null && count >= maxResponses) {
+        return {
+            error: `Has alcanzado el límite de ${maxResponses} ${maxResponses === 1 ? 'respuesta' : 'respuestas'} para esta actividad`,
+            data: null
+        }
+    }
+
+    console.log('[submitResponse] Inserting response for activity:', activityId, 'participant:', participantId, 'existing count:', count, 'maxResponses:', maxResponses)
+
+    const { data, error } = await supabase
         .from('responses')
         .insert({
             activity_id: activityId,
@@ -118,30 +136,53 @@ export async function submitResponse(
             participant_id: participantId,
             answer,
         })
+        .select()
 
     if (error) {
-        console.error('Error enviando respuesta:', error)
-        if (error.code === '23505') { // Unique violation
-            return { error: 'Ya has enviado una respuesta para esta actividad.', data: null }
+        console.error('[submitResponse] Supabase error:', error.message, error.code, error.details, error.hint)
+
+        // Detect unique constraint violation
+        if (error.code === '23505' || error.message.includes('duplicate key') || error.message.includes('unique')) {
+            return {
+                error: 'Ya has respondido a esta actividad. Si deseas responder múltiples veces, contacta al presentador para ajustar la configuración.',
+                data: null
+            }
         }
-        return { error: 'Error al guardar tu respuesta. Inténtalo de nuevo.', data: null }
+
+        return { error: `Error al guardar tu respuesta: ${error.message}`, data: null }
     }
 
-    // Return success without data payload (we don't need it in the UI)
     return { data: { success: true }, error: null }
 }
 
 export async function checkParticipantResponse(activityId: string, participantId: string) {
     const supabase = createClient()
 
-    const { data } = await supabase
-        .from('responses')
-        .select('id')
-        .eq('activity_id', activityId)
-        .eq('participant_id', participantId)
+    // Get activity settings
+    const { data: activity } = await supabase
+        .from('activities')
+        .select('settings')
+        .eq('id', activityId)
         .single()
 
-    return { hasResponded: !!data }
+    const maxResponses = activity?.settings?.max_responses_per_participant
+
+    // Count responses
+    const { count } = await supabase
+        .from('responses')
+        .select('id', { count: 'exact', head: true })
+        .eq('activity_id', activityId)
+        .eq('participant_id', participantId)
+
+    const responseCount = count || 0
+    const hasReachedLimit = maxResponses !== null && maxResponses !== undefined && responseCount >= maxResponses
+
+    return {
+        hasResponded: responseCount > 0,
+        responseCount,
+        maxResponses,
+        hasReachedLimit
+    }
 }
 
 

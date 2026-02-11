@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Session, Activity, ActivityType } from '@/types'
 import { registerParticipant, submitResponse, checkSessionStatus, checkParticipantResponse } from '../../actions'
@@ -29,8 +29,23 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [submittedActivities, setSubmittedActivities] = useState<Set<string>>(new Set())
+    const [responseCount, setResponseCount] = useState(0)
+    const [maxResponses, setMaxResponses] = useState<number | null>(null)
+    const [hasReachedLimit, setHasReachedLimit] = useState(false)
 
     const currentActivity = initialActivities[currentActivityIndex] || null
+
+    // Refs for Realtime to avoid unnecessary re-subscriptions
+    const currentIndexRef = useRef(currentActivityIndex)
+    const participantIdRef = useRef(participantId)
+
+    useEffect(() => {
+        currentIndexRef.current = currentActivityIndex
+    }, [currentActivityIndex])
+
+    useEffect(() => {
+        participantIdRef.current = participantId
+    }, [participantId])
 
     // Function to fetch current session state
     const syncSessionState = async () => {
@@ -47,13 +62,24 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
             }
 
             const newIndex = sessionData.current_activity_index ?? 0
-            if (newIndex !== currentActivityIndex) {
+            if (newIndex !== currentIndexRef.current) {
+                console.log('[syncSessionState] Activity index changed:', currentIndexRef.current, '->', newIndex)
                 setCurrentActivityIndex(newIndex)
                 setSelectedAnswer(null)
-                // Check if we already submitted for this activity
+
+                // Check response status for new activity
                 const activityId = initialActivities[newIndex]?.id
-                if (activityId && !submittedActivities.has(activityId)) {
-                    if (participantId) setStep('activity')
+                if (activityId && participantIdRef.current) {
+                    const result = await checkParticipantResponse(activityId, participantIdRef.current)
+                    setResponseCount(result.responseCount)
+                    setMaxResponses(result.maxResponses)
+                    setHasReachedLimit(result.hasReachedLimit)
+
+                    if (result.hasReachedLimit) {
+                        setStep('submitted')
+                    } else {
+                        setStep('activity')
+                    }
                 }
             }
         }
@@ -67,8 +93,12 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
 
             // Verificar si ya ha respondido a la actividad actual
             if (currentActivity) {
-                checkParticipantResponse(currentActivity.id, storedParticipantId).then(({ hasResponded }) => {
-                    if (hasResponded) {
+                checkParticipantResponse(currentActivity.id, storedParticipantId).then((result) => {
+                    setResponseCount(result.responseCount)
+                    setMaxResponses(result.maxResponses)
+                    setHasReachedLimit(result.hasReachedLimit)
+
+                    if (result.hasReachedLimit) {
                         setStep('submitted')
                         setSubmittedActivities(prev => new Set(prev).add(currentActivity.id))
                     } else {
@@ -82,7 +112,7 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
         }
 
         // Subscribe to session changes via Realtime
-        console.log('Connecting participant to Realtime...')
+        console.log('[ParticipantSession] Connecting to Realtime for session:', session.id)
         const channel = supabase
             .channel(`participant-session-${session.id}`)
             .on(
@@ -94,34 +124,58 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
                     filter: `id=eq.${session.id}`
                 },
                 (payload) => {
-                    console.log('Session update received:', payload.new)
-                    if (!payload.new.is_live) {
+                    console.log('[ParticipantSession] Realtime update:', payload.new)
+                    if (payload.new.is_live === false) {
                         setStep('ended')
                         return
                     }
+
                     const newIndex = payload.new.current_activity_index ?? 0
-                    if (newIndex !== currentActivityIndex) {
+                    if (newIndex !== currentIndexRef.current) {
+                        console.log('[ParticipantSession] Activity changed via Realtime:', currentIndexRef.current, '->', newIndex)
+
+                        // Optimistic transition
                         setCurrentActivityIndex(newIndex)
                         setSelectedAnswer(null)
+                        setError(null)
+
                         const activityId = initialActivities[newIndex]?.id
-                        if (activityId && !submittedActivities.has(activityId)) {
-                            if (participantId) setStep('activity')
+                        if (activityId && participantIdRef.current) {
+                            checkParticipantResponse(activityId, participantIdRef.current).then(result => {
+                                setResponseCount(result.responseCount)
+                                setMaxResponses(result.maxResponses)
+                                setHasReachedLimit(result.hasReachedLimit)
+
+                                if (result.hasReachedLimit) {
+                                    setStep('submitted')
+                                } else {
+                                    setStep('activity')
+                                }
+                            })
                         }
                     }
                 }
             )
             .subscribe((status) => {
-                console.log(`Participant Realtime status: ${status}`)
+                console.log(`[ParticipantSession] Realtime status: ${status}`)
+                if (status === 'SUBSCRIBED') {
+                    // Sync immediately on successful subscription to catch any missed updates
+                    syncSessionState()
+                }
             })
 
-        // Polling fallback every 3 seconds
-        const interval = setInterval(syncSessionState, 3000)
+        // Polling fallback every 2 seconds (increased frequency)
+        const interval = setInterval(() => {
+            syncSessionState()
+        }, 2000)
 
         return () => {
+            console.log('[ParticipantSession] Cleaning up Realtime and polling')
             supabase.removeChannel(channel).catch(err => console.error('Error removing channel:', err))
             clearInterval(interval)
         }
-    }, [session.id, currentActivity, supabase, currentActivityIndex, participantId, submittedActivities, initialActivities])
+    }, [session.id, supabase, initialActivities]) // Stable dependencies
+
 
     const handleRegister = async () => {
         setSubmitting(true)
@@ -138,7 +192,17 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
         if (result.data) {
             setParticipantId(result.data.id)
             sessionStorage.setItem(`participant_${session.id}`, result.data.id)
-            setStep(currentActivity ? 'activity' : 'waiting')
+
+            // Check the activity's response settings so the participant knows limits
+            if (currentActivity) {
+                const check = await checkParticipantResponse(currentActivity.id, result.data.id)
+                setResponseCount(check.responseCount)
+                setMaxResponses(check.maxResponses)
+                setHasReachedLimit(check.hasReachedLimit)
+                setStep('activity')
+            } else {
+                setStep('waiting')
+            }
         }
         setSubmitting(false)
     }
@@ -186,6 +250,13 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
 
         // Track this activity as submitted
         setSubmittedActivities(prev => new Set(prev).add(currentActivity.id))
+        setResponseCount(prev => prev + 1)
+
+        // Check if we've reached the limit
+        if (maxResponses !== null && responseCount + 1 >= maxResponses) {
+            setHasReachedLimit(true)
+        }
+
         setStep('submitted')
         setSubmitting(false)
     }
@@ -459,12 +530,41 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
                     <div className={styles.submitted}>
                         <div className={styles.successIcon}>✅</div>
                         <h2>¡Respuesta Registrada!</h2>
-                        <p>Por favor espera a que el presentador muestre la siguiente pregunta.</p>
-                        <div className={styles.dots}>
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
+                        {maxResponses !== null && (
+                            <p className={styles.responseInfo}>
+                                Has respondido {responseCount} de {maxResponses} {maxResponses === 1 ? 'vez' : 'veces'}
+                            </p>
+                        )}
+                        {maxResponses === null && (
+                            <p className={styles.responseInfo}>
+                                Has enviado {responseCount} {responseCount === 1 ? 'respuesta' : 'respuestas'}
+                            </p>
+                        )}
+                        {hasReachedLimit ? (
+                            <>
+                                <p>Has alcanzado el límite de respuestas para esta actividad.</p>
+                                <p style={{ opacity: 0.7, fontSize: '0.9rem' }}>Espera a la siguiente pregunta.</p>
+                                <div className={styles.dots}>
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <p>Puedes enviar otra respuesta si lo deseas.</p>
+                                <Button
+                                    onClick={() => {
+                                        setSelectedAnswer(null)
+                                        setError(null)
+                                        setStep('activity')
+                                    }}
+                                    className={styles.submitButton}
+                                >
+                                    🔄 Responder de nuevo
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </Card>
             </div>

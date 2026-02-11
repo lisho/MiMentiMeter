@@ -31,21 +31,39 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
     const [responses, setResponses] = useState<Response[]>(initialResponses || [])
     const [totalResponses, setTotalResponses] = useState(initialResponses?.length || 0)
 
+    // Load responses from server
+    const loadResponses = async () => {
+        if (!sessionId) return
+
+        const { data, count } = await supabase
+            .from('responses')
+            .select('id, answer', { count: 'exact' })
+            .eq('activity_id', activity.id)
+            .eq('session_id', sessionId)
+
+        if (data) {
+            setResponses(data as Response[])
+            setTotalResponses(count || data.length)
+        }
+    }
+
     useEffect(() => {
-        // If initialResponses provided, use them and update on change
+        // Set initial responses if provided
         if (initialResponses) {
             setResponses(initialResponses)
             setTotalResponses(initialResponses.length)
-            return
+        } else if (sessionId) {
+            // Load responses if not provided
+            loadResponses()
         }
 
-        if (!sessionId) return
+        // Subscribe to new responses for real-time updates
+        const channelName = sessionId
+            ? `results-${activity.id}-${sessionId}`
+            : `results-${activity.id}`
 
-        loadResponses()
-
-        // Subscribe to new responses
         const channel = supabase
-            .channel(`results-${activity.id}`)
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 {
@@ -55,29 +73,35 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
                     filter: `activity_id=eq.${activity.id}`
                 },
                 (payload) => {
-                    setResponses(prev => [...prev, payload.new as Response])
-                    setTotalResponses(prev => prev + 1)
+                    console.log('[ResultsVisualization] Realtime INSERT received:', payload.new)
+                    const newResponse = payload.new as any
+                    // If sessionId is specified, only add responses from that session
+                    if (!sessionId || newResponse.session_id === sessionId) {
+                        setResponses(prev => {
+                            // Avoid duplicates
+                            if (prev.some(r => r.id === newResponse.id)) return prev
+                            return [...prev, newResponse as Response]
+                        })
+                        setTotalResponses(prev => prev + 1)
+                    }
                 }
             )
-            .subscribe()
+            .subscribe((status) => {
+                console.log(`[ResultsVisualization] Realtime status for ${activity.id}:`, status)
+            })
+
+        // Polling fallback every 3 seconds to catch responses even if Realtime fails
+        const pollingInterval = setInterval(() => {
+            if (sessionId) {
+                loadResponses()
+            }
+        }, 3000)
 
         return () => {
-            supabase.removeChannel(channel)
+            supabase.removeChannel(channel).catch(err => console.error('Error removing channel:', err))
+            clearInterval(pollingInterval)
         }
-    }, [activity.id, sessionId, supabase, initialResponses])
-
-    const loadResponses = async () => {
-        const { data, count } = await supabase
-            .from('responses')
-            .select('id, answer', { count: 'exact' })
-            .eq('activity_id', activity.id)
-            .eq('session_id', sessionId)
-
-        if (data) {
-            setResponses(data as Response[])
-            setTotalResponses(count || 0)
-        }
-    }
+    }, [activity.id, sessionId])
 
     const renderVisualization = () => {
         switch (activity.type) {

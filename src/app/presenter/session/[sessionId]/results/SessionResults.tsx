@@ -140,6 +140,7 @@ export function SessionResults({ session, sessionData }: SessionResultsProps) {
 
                     <ResultsVisualization
                         activity={currentActivity}
+                        sessionId={session.id}
                         initialResponses={activityResponses as any}
                     />
                 </div>

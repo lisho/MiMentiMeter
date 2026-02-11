@@ -1,12 +1,12 @@
-
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Activity, ActivityType, ScaleOptions, QuizOptions } from '@/types'
 import { updateActivity } from '@/app/presenter/actions'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
+import { useToast } from '@/components/ui/Toast'
 import styles from './ActivityEditor.module.css'
 
 interface ActivityEditorProps {
@@ -66,8 +66,22 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         return index !== -1 ? index : 0
     })
 
+    // Settings states — use explicit undefined check so null (unlimited) is preserved
+    const [maxResponsesPerParticipant, setMaxResponsesPerParticipant] = useState<number | null>(
+        activity.settings.max_responses_per_participant === undefined ? 1 : activity.settings.max_responses_per_participant
+    )
+
     const [saving, setSaving] = useState(false)
     const [hasChanges, setHasChanges] = useState(false)
+
+    const { showToast } = useToast()
+
+    // Sync state with activity prop changes (crucial for when switching activities or after update)
+    useEffect(() => {
+        setMaxResponsesPerParticipant(activity.settings.max_responses_per_participant === undefined ? 1 : activity.settings.max_responses_per_participant)
+        setQuestion(activity.question)
+        // Note: Resetting options/images state on activity switch usually happens via key prop on component
+    }, [activity.id, activity.settings.max_responses_per_participant, activity.question])
 
     const handleQuestionChange = (value: string) => {
         setQuestion(value)
@@ -122,6 +136,7 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
 
         const formData = new FormData()
         formData.append('id', activity.id)
+        formData.append('presentation_id', activity.presentation_id)
         formData.append('question', question)
 
         let updatedOptions = activity.options
@@ -151,15 +166,38 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
 
         formData.append('options', JSON.stringify(updatedOptions))
 
+        // Build settings
+        const updatedSettings = {
+            ...activity.settings,
+            max_responses_per_participant: maxResponsesPerParticipant
+        }
+        formData.append('settings', JSON.stringify(updatedSettings))
+
+        console.log('[ActivityEditor] Saving settings:', JSON.stringify(updatedSettings))
+        console.log('[ActivityEditor] max_responses_per_participant value:', maxResponsesPerParticipant, 'type:', typeof maxResponsesPerParticipant)
+
         const result = await updateActivity(formData)
 
+        console.log('[ActivityEditor] Server result:', JSON.stringify(result))
+
         if (!result.error) {
+            // Use the data returned from the server as the source of truth
+            const serverData = (result as any).data
+            const confirmedSettings = serverData?.settings || updatedSettings
+
+            console.log('[ActivityEditor] Confirmed settings from server:', JSON.stringify(confirmedSettings))
+
             onUpdate({
                 ...activity,
                 question,
-                options: updatedOptions
+                options: serverData?.options || updatedOptions,
+                settings: confirmedSettings
             })
             setHasChanges(false)
+            showToast('✅ Cambios guardados correctamente', 'success')
+        } else {
+            console.error('[ActivityEditor] Save error:', result.error)
+            showToast(`Error: ${result.error}`, 'error')
         }
 
         setSaving(false)
@@ -327,6 +365,44 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
                     </div>
                 </div>
             )}
+
+            {/* Settings Section */}
+            <div className={styles.settingsSection}>
+                <h3 className={styles.settingsTitle}>⚙️ Configuración</h3>
+                <div className={styles.field}>
+                    <label>Máximo de respuestas por participante</label>
+                    <div className={styles.responseLimit}>
+                        <Input
+                            type="number"
+                            min="1"
+                            value={maxResponsesPerParticipant || ''}
+                            onChange={(e) => {
+                                const val = e.target.value === '' ? null : Number(e.target.value)
+                                setMaxResponsesPerParticipant(val)
+                                setHasChanges(true)
+                            }}
+                            placeholder="Ilimitado"
+                        />
+                        <label className={styles.checkboxLabel}>
+                            <input
+                                type="checkbox"
+                                checked={maxResponsesPerParticipant === null}
+                                onChange={(e) => {
+                                    setMaxResponsesPerParticipant(e.target.checked ? null : 1)
+                                    setHasChanges(true)
+                                }}
+                            />
+                            Ilimitado
+                        </label>
+                    </div>
+                    <p className={styles.helpText}>
+                        {maxResponsesPerParticipant === null
+                            ? 'Los participantes pueden responder múltiples veces'
+                            : `Cada participante puede responder hasta ${maxResponsesPerParticipant} ${maxResponsesPerParticipant === 1 ? 'vez' : 'veces'}`
+                        }
+                    </p>
+                </div>
+            </div>
 
             {hasChanges && (
                 <div className={styles.saveBar}>

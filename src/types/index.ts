@@ -128,6 +128,7 @@ export interface ActivitySettings {
     show_results_immediately: boolean
     allow_anonymous: boolean
     require_name: boolean
+    max_responses_per_participant: number | null // null = unlimited
 }
 
 // ============================================

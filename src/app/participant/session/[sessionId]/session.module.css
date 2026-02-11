@@ -354,6 +354,13 @@
     margin: 0;
 }
 
+.responseInfo {
+    font-size: 0.875rem;
+    color: var(--primary) !important;
+    font-weight: 600;
+    margin: var(--spacing-xs) 0 !important;
+}
+
 /* Ended State */
 .ended {
     text-align: center;
