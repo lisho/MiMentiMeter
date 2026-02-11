@@ -1,11 +1,15 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Activity, ActivityType } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/Card'
 import styles from './ResultsVisualization.module.css'
+import cloud from 'd3-cloud'
+import { select } from 'd3-selection'
+import { scaleLinear } from 'd3-scale'
+import { Button } from '@/components/ui/Button'
 
 interface ResultsVisualizationProps {
     activity: Activity
@@ -30,6 +34,17 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
     const supabase = createClient()
     const [responses, setResponses] = useState<Response[]>(initialResponses || [])
     const [totalResponses, setTotalResponses] = useState(initialResponses?.length || 0)
+    const fullscreenRef = useRef<HTMLDivElement>(null)
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            fullscreenRef.current?.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
 
     // Load responses from server
     const loadResponses = async () => {
@@ -130,17 +145,22 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
     }
 
     return (
-        <Card className={styles.container}>
+        <div ref={fullscreenRef} className={styles.container} style={{ backgroundColor: 'white', borderRadius: '8px', height: '100%', overflowY: 'auto' }}>
             <div className={styles.header}>
                 <h3>Resultados en Tiempo Real</h3>
-                <div className={styles.counter}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    <span>{totalResponses} respuestas</span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div className={styles.counter}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        <span>{totalResponses} respuestas</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Pantalla Completa">
+                        ⛶
+                    </Button>
                 </div>
             </div>
 
@@ -152,7 +172,7 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
             ) : (
                 renderVisualization()
             )}
-        </Card>
+        </div>
     )
 }
 
@@ -275,41 +295,165 @@ function ScaleResults({ activity, responses, total }: { activity: Activity; resp
 }
 
 // Word Cloud Results
+// Word Cloud Results
 function WordCloudResults({ responses, total }: { responses: Response[]; total: number }) {
-    const wordCounts = new Map<string, number>()
+    const svgRef = useRef<SVGSVGElement>(null)
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+    const containerRef = useRef<HTMLDivElement>(null)
+    const previousWordsRef = useRef<string>('')
+    const [refreshKey, setRefreshKey] = useState(0)
 
-    responses.forEach(r => {
-        const words = r.answer.words || []
-        words.forEach(word => {
-            const normalized = word.toLowerCase().trim()
-            if (normalized) {
-                wordCounts.set(normalized, (wordCounts.get(normalized) || 0) + 1)
-            }
+    // Process words
+    const words = useMemo(() => {
+        const wordCounts = new Map<string, number>()
+        responses.forEach(r => {
+            const words = r.answer.words || []
+            words.forEach(word => {
+                const normalized = word.toLowerCase().trim()
+                if (normalized) {
+                    wordCounts.set(normalized, (wordCounts.get(normalized) || 0) + 1)
+                }
+            })
         })
-    })
 
-    const sortedWords = Array.from(wordCounts.entries())
-        .map(([word, count]) => ({ word, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 20)
+        return Array.from(wordCounts.entries())
+            .map(([text, value]) => ({ text, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 100) // Limit to top 100 words
+    }, [responses])
 
-    const maxCount = Math.max(...sortedWords.map(w => w.count), 1)
+    // Update dimensions on resize
+    useEffect(() => {
+        const updateDimensions = () => {
+            if (containerRef.current) {
+                const { width } = containerRef.current.getBoundingClientRect()
+                // Height based on width but constrained
+                const height = Math.min(500, width * 0.6)
+                setDimensions({ width, height })
+            }
+        }
+
+        updateDimensions()
+        window.addEventListener('resize', updateDimensions)
+        return () => window.removeEventListener('resize', updateDimensions)
+    }, [])
+
+    // Draw cloud
+    useEffect(() => {
+        if (!dimensions.width || !dimensions.height || words.length === 0 || !svgRef.current) return
+
+        // Deep compare check: now includes refreshKey to allow force updates
+        const currentDataHash = JSON.stringify(words) + `-${refreshKey}`
+        if (currentDataHash === previousWordsRef.current && svgRef.current.hasChildNodes()) return
+        previousWordsRef.current = currentDataHash
+
+        const { width, height } = dimensions
+
+        // Setup SVG group once
+        const svg = select(svgRef.current)
+        svg.attr('width', width).attr('height', height)
+
+        let g = svg.select<SVGGElement>('g')
+        if (g.empty()) {
+            g = svg.append('g')
+                .attr('transform', `translate(${width / 2},${height / 2})`)
+        } else {
+            g.attr('transform', `translate(${width / 2},${height / 2})`)
+        }
+
+        // Configure scale
+        const maxVal = Math.max(...words.map(w => w.value), 1)
+        const minVal = Math.min(...words.map(w => w.value), 1)
+
+        const fontScale = scaleLinear()
+            .domain([minVal, maxVal])
+            .range([20, 80])
+
+        // Colors - Autumn/Warm palette
+        const colors = ['#8B0000', '#A52A2A', '#B22222', '#8B4513', '#D2691E', '#CD853F', '#B8860B', '#DAA520', '#556B2F', '#2F4F4F']
+
+        // Deterministic rotation based on text hash + refreshKey for manual reload
+        const getRotate = (text: string) => {
+            let hash = 0
+            for (let i = 0; i < text.length; i++) {
+                hash = text.charCodeAt(i) + ((hash << 5) - hash) + refreshKey
+            }
+            return (Math.abs(hash) % 2 === 0) ? 0 : 90
+        }
+
+        const layout = cloud()
+            .size([width, height])
+            .words(words.map((d, index) => ({ text: d.text, size: fontScale(d.value), value: d.value, rank: index })))
+            .padding(13) // Set to exactly 13px as requested
+            .rotate((d: any) => (d.rank < 3 ? 0 : getRotate(d.text)))
+            .font('Inter, sans-serif') // Keep synchronized font for accuracy
+            .fontSize((d: any) => d.size)
+            .on('end', draw)
+
+        layout.start()
+
+        function draw(layoutWords: any[]) {
+            // Data Join
+            const texts = g.selectAll<SVGTextElement, any>('text')
+                .data(layoutWords, (d: any) => d.text);
+
+            // EXIT - Remove old words
+            texts.exit().remove();
+
+            // UPDATE - Move existing words
+            texts
+                .style('font-size', (d: any) => `${d.size}px`)
+                .style('fill', (d: any, i: number) => colors[i % colors.length])
+                .attr('transform', (d: any) => `translate(${d.x},${d.y})rotate(${d.rotate})`)
+                .style('opacity', 1);
+
+            // ENTER - Add new words
+            texts.enter()
+                .append('text')
+                .style('font-size', (d: any) => `${d.size}px`)
+                .style('font-family', 'Inter, sans-serif')
+                .style('fill', (d: any, i: number) => colors[i % colors.length])
+                .attr('text-anchor', 'middle')
+                .attr('transform', (d: any) => `translate(${d.x},${d.y})rotate(${d.rotate})`)
+                .text((d: any) => d.text)
+                .style('cursor', 'default')
+                .style('opacity', 1);
+
+            g.selectAll('text').select('title').remove()
+            g.selectAll('text').append('title').text((d: any) => `${d.value} veces`)
+        }
+
+    }, [words, dimensions, refreshKey])
 
     return (
-        <div className={styles.wordCloud}>
-            {sortedWords.map(({ word, count }) => {
-                const size = 0.8 + (count / maxCount) * 2.2 // 0.8rem to 3rem
-                return (
-                    <span
-                        key={word}
-                        className={styles.word}
-                        style={{ fontSize: `${size}rem` }}
-                        title={`${count} veces`}
-                    >
-                        {word}
-                    </span>
-                )
-            })}
+        <div className={styles.wordCloudContainer} style={{ position: 'relative', width: '100%' }}>
+            <div
+                ref={containerRef}
+                style={{
+                    width: '100%',
+                    minHeight: '400px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    backgroundColor: '#fafafa',
+                    borderRadius: '12px',
+                    padding: '24px',
+                    boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.05)',
+                    border: '1px solid #eee'
+                }}
+            >
+                <svg ref={svgRef} />
+            </div>
+            <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setRefreshKey(prev => prev + 1)}
+                    title="Recargar nube"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(4px)' }}
+                >
+                    🔄
+                </Button>
+            </div>
         </div>
     )
 }

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Session, Activity, ActivityType } from '@/types'
 import { registerParticipant, submitResponse, checkSessionStatus, checkParticipantResponse } from '../../actions'
@@ -48,7 +48,7 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
     }, [participantId])
 
     // Function to fetch current session state
-    const syncSessionState = async () => {
+    const syncSessionState = useCallback(async () => {
         const { data: sessionData } = await supabase
             .from('sessions')
             .select('is_live, current_activity_index')
@@ -83,7 +83,7 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
                 }
             }
         }
-    }
+    }, [session.id, supabase, initialActivities])
 
     useEffect(() => {
         // Check if participant is already registered in this session
@@ -174,7 +174,7 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
             supabase.removeChannel(channel).catch(err => console.error('Error removing channel:', err))
             clearInterval(interval)
         }
-    }, [session.id, supabase, initialActivities]) // Stable dependencies
+    }, [session.id, supabase, initialActivities, syncSessionState]) // Stable dependencies
 
 
     const handleRegister = async () => {
@@ -528,6 +528,11 @@ export function ParticipantSession({ session, presentationTitle, initialActiviti
             <div className={styles.container}>
                 <Card className={styles.card} shouldGlass>
                     <div className={styles.submitted}>
+                        {currentActivity && (
+                            <h3 className={styles.question} style={{ fontSize: '1.2rem', marginBottom: '1.5rem', opacity: 0.9 }}>
+                                {currentActivity.question}
+                            </h3>
+                        )}
                         <div className={styles.successIcon}>✅</div>
                         <h2>¡Respuesta Registrada!</h2>
                         {maxResponses !== null && (
