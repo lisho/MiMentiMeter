@@ -1,4 +1,3 @@
-
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { LivePresenter } from './LivePresenter'
@@ -35,8 +34,8 @@ export default async function LiveSessionPage({ params }: PageProps) {
 
     return (
         <LivePresenter
-            session={session}
-            presentation={session.presentations}
+            session={session as any}
+            presentation={session.presentations as any}
             activities={activities || []}
         />
     )

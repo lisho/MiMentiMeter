@@ -42,8 +42,8 @@ export default async function SessionResultsPage({ params }: PageProps) {
 
     return (
         <SessionResults
-            session={session}
-            sessionData={result.data}
+            session={session as any}
+            sessionData={result.data as any}
         />
     )
 }

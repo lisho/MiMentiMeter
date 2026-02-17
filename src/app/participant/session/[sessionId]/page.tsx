@@ -41,7 +41,7 @@ export default async function SessionPage({ params }: PageProps) {
 
     return (
         <ParticipantSession
-            session={session}
+            session={session as any}
             presentationTitle={presentation?.title || 'Presentación'}
             initialActivities={activities || []}
         />

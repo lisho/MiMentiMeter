@@ -1,13 +1,13 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { joinSession } from '../actions'
 import styles from './join.module.css'
 
-export default function ParticipantJoin() {
+function JoinForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [code, setCode] = useState('')
@@ -105,5 +105,19 @@ export default function ParticipantJoin() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function ParticipantJoin() {
+    return (
+        <Suspense fallback={
+            <div className={styles.container}>
+                <div className={styles.content}>
+                    <p className="text-muted animate-pulse">Cargando...</p>
+                </div>
+            </div>
+        }>
+            <JoinForm />
+        </Suspense>
     )
 }

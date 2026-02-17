@@ -11,7 +11,7 @@ import { exportSessionData } from '../../../results/actions'
 import styles from './session-results.module.css'
 
 interface SessionData {
-    session: Session
+    session: any
     activities: Activity[]
     participants: { id: string; name: string }[]
     responses: Response[]

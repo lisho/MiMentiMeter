@@ -1,14 +1,14 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { login, signup } from '../actions'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 
-export default function LoginPage() {
+function LoginForm() {
     const searchParams = useSearchParams()
     const [isLogin, setIsLogin] = useState(true)
     const [loading, setLoading] = useState(false)
@@ -130,5 +130,17 @@ export default function LoginPage() {
                 </div>
             </Card>
         </div>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[var(--bg-dark)]">
+                <p className="text-[var(--text-muted)] animate-pulse">Cargando...</p>
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     )
 }
