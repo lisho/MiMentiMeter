@@ -131,7 +131,7 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
                 return <ScaleResults activity={activity} responses={responses} total={totalResponses} />
 
             case 'word_cloud':
-                return <WordCloudResults responses={responses} total={totalResponses} />
+                return <WordCloudResults responses={responses} total={totalResponses} activity={activity} />
 
             case 'open_text':
                 return <OpenTextResults responses={responses} total={totalResponses} />
@@ -294,9 +294,17 @@ function ScaleResults({ activity, responses, total }: { activity: Activity; resp
     )
 }
 
+const PALETTES = {
+    autumn: ['#8B0000', '#A52A2A', '#B22222', '#8B4513', '#D2691E', '#CD853F', '#B8860B', '#DAA520', '#556B2F', '#2F4F4F'],
+    ocean: ['#1e3a8a', '#1e40af', '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#0e7490', '#0891b2', '#06b6d4', '#67e8f9'],
+    vibrant: ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'],
+    professional: ['#0f172a', '#334155', '#475569', '#64748b', '#94a3b8', '#4f46e5', '#4338ca', '#3730a3', '#312e81', '#1e1b4b']
+}
+
+type PaletteName = keyof typeof PALETTES
+
 // Word Cloud Results
-// Word Cloud Results
-function WordCloudResults({ responses, total }: { responses: Response[]; total: number }) {
+function WordCloudResults({ responses, total, activity }: { responses: Response[]; total: number; activity?: Activity }) {
     const svgRef = useRef<SVGSVGElement>(null)
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
     const containerRef = useRef<HTMLDivElement>(null)
@@ -369,8 +377,10 @@ function WordCloudResults({ responses, total }: { responses: Response[]; total: 
             .domain([minVal, maxVal])
             .range([20, 80])
 
-        // Colors - Autumn/Warm palette
-        const colors = ['#8B0000', '#A52A2A', '#B22222', '#8B4513', '#D2691E', '#CD853F', '#B8860B', '#DAA520', '#556B2F', '#2F4F4F']
+        // Get palette from options or default to 'autumn'
+        // Need to cast to any because options is strictly typed in interface but flexible in DB
+        const paletteName = ((activity?.options as any)?.palette as PaletteName) || 'autumn'
+        const colors = PALETTES[paletteName] || PALETTES['autumn']
 
         // Deterministic rotation based on text hash + refreshKey for manual reload
         const getRotate = (text: string) => {
@@ -423,7 +433,7 @@ function WordCloudResults({ responses, total }: { responses: Response[]; total: 
             g.selectAll('text').append('title').text((d: any) => `${d.value} veces`)
         }
 
-    }, [words, dimensions, refreshKey])
+    }, [words, dimensions, refreshKey, activity])
 
     return (
         <div className={styles.wordCloudContainer} style={{ position: 'relative', width: '100%' }}>
@@ -434,11 +444,11 @@ function WordCloudResults({ responses, total }: { responses: Response[]; total: 
                     minHeight: '400px',
                     display: 'flex',
                     justifyContent: 'center',
-                    backgroundColor: '#fafafa',
+                    backgroundColor: 'var(--bg-card)',
                     borderRadius: '12px',
                     padding: '24px',
-                    boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.05)',
-                    border: '1px solid #eee'
+                    boxShadow: 'var(--shadow-sm)',
+                    border: '1px solid var(--border)'
                 }}
             >
                 <svg ref={svgRef} />
@@ -449,7 +459,7 @@ function WordCloudResults({ responses, total }: { responses: Response[]; total: 
                     size="sm"
                     onClick={() => setRefreshKey(prev => prev + 1)}
                     title="Recargar nube"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(4px)' }}
+                    style={{ backgroundColor: 'var(--bg-card)', backdropFilter: 'blur(4px)', border: '1px solid var(--border)' }}
                 >
                     🔄
                 </Button>

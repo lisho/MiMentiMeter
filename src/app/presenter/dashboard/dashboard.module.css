@@ -11,7 +11,8 @@
     top: 0;
     z-index: 100;
     backdrop-filter: blur(10px);
-    background: rgba(30, 30, 45, 0.8);
+    background: var(--bg-card);
+    opacity: 0.95;
 }
 
 .headerContent {

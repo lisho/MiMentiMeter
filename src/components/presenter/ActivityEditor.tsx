@@ -71,6 +71,11 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         activity.settings.max_responses_per_participant === undefined ? 1 : activity.settings.max_responses_per_participant
     )
 
+    // Word Cloud state
+    const [palette, setPalette] = useState<string>(
+        'palette' in activity.options ? (activity.options as any).palette : 'autumn'
+    )
+
     const [saving, setSaving] = useState(false)
     const [hasChanges, setHasChanges] = useState(false)
 
@@ -80,8 +85,11 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
     useEffect(() => {
         setMaxResponsesPerParticipant(activity.settings.max_responses_per_participant === undefined ? 1 : activity.settings.max_responses_per_participant)
         setQuestion(activity.question)
+        if (activity.type === 'word_cloud') {
+            setPalette('palette' in activity.options ? (activity.options as any).palette : 'autumn')
+        }
         // Note: Resetting options/images state on activity switch usually happens via key prop on component
-    }, [activity.id, activity.settings.max_responses_per_participant, activity.question])
+    }, [activity.id, activity.settings.max_responses_per_participant, activity.question, activity.options, activity.type])
 
     const handleQuestionChange = (value: string) => {
         setQuestion(value)
@@ -139,7 +147,7 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         formData.append('presentation_id', activity.presentation_id)
         formData.append('question', question)
 
-        let updatedOptions = activity.options
+        let updatedOptions: any = activity.options
         if (activity.type === 'multiple_choice' || activity.type === 'quiz' || activity.type === 'image_choice') {
             const isQuiz = activity.type === 'quiz'
             const isImage = activity.type === 'image_choice'
@@ -162,6 +170,11 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
                 min_label: minLabel,
                 max_label: maxLabel
             } as ScaleOptions
+        } else if (activity.type === 'word_cloud') {
+            updatedOptions = {
+                ...activity.options,
+                palette
+            }
         }
 
         formData.append('options', JSON.stringify(updatedOptions))
@@ -174,7 +187,6 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         formData.append('settings', JSON.stringify(updatedSettings))
 
         console.log('[ActivityEditor] Saving settings:', JSON.stringify(updatedSettings))
-        console.log('[ActivityEditor] max_responses_per_participant value:', maxResponsesPerParticipant, 'type:', typeof maxResponsesPerParticipant)
 
         const result = await updateActivity(formData)
 
@@ -296,6 +308,23 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
                             + Añadir opción
                         </Button>
                     </div>
+                </div>
+            )}
+
+            {activity.type === 'word_cloud' && (
+                <div className={styles.field}>
+                    <label>Paleta de Color</label>
+                    <select
+                        className="input"
+                        value={palette}
+                        onChange={(e) => { setPalette(e.target.value); setHasChanges(true); }}
+                        style={{ height: '40px' }}
+                    >
+                        <option value="autumn">🍂 Otoño (Cálido)</option>
+                        <option value="ocean">🌊 Océano (Azules)</option>
+                        <option value="vibrant">🌈 Vibrante (Multicolor)</option>
+                        <option value="professional">🏢 Profesional (Grises/Azul)</option>
+                    </select>
                 </div>
             )}
 

@@ -1,67 +1,123 @@
 :root {
-  /* === Colores Principales === */
-  --primary: hsl(250, 100%, 65%);
-  --primary-dark: hsl(250, 100%, 50%);
-  --primary-light: hsl(250, 100%, 75%);
-  --secondary: hsl(340, 100%, 65%);
-  --secondary-dark: hsl(340, 100%, 50%);
-  
-  /* === Fondos === */
-  --bg-dark: hsl(230, 25%, 12%);
-  --bg-card: hsl(230, 25%, 18%);
-  --bg-hover: hsl(230, 25%, 22%);
-  --bg-input: hsl(230, 25%, 15%);
-  
-  /* === Textos === */
-  --text-primary: hsl(0, 0%, 98%);
-  --text-secondary: hsl(0, 0%, 70%);
-  --text-muted: hsl(0, 0%, 50%);
-  
-  /* === Bordes === */
-  --border: hsl(230, 25%, 25%);
-  --border-light: hsl(230, 25%, 30%);
-  
-  /* === Colores para Gráficos === */
-  --chart-1: hsl(200, 100%, 60%);
-  --chart-2: hsl(140, 70%, 50%);
-  --chart-3: hsl(40, 100%, 60%);
-  --chart-4: hsl(340, 100%, 65%);
-  --chart-5: hsl(280, 100%, 65%);
-  
-  /* === Estados === */
-  --success: hsl(140, 70%, 50%);
-  --error: hsl(0, 80%, 60%);
-  --warning: hsl(40, 100%, 60%);
-  --info: hsl(200, 100%, 60%);
-  
-  /* === Sombras === */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  
-  /* === Glassmorphism === */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: blur(10px);
-  
-  /* === Espaciado === */
+  /* === Raw Palette (From Image) === */
+  --color-sage: #E2E8C0;
+  /* Top: Pale Green/Yellow */
+  --color-apricot: #E0A883;
+  /* Second: Soft Orange */
+  --color-marsala: #A65D5D;
+  /* Third: Reddish Brown */
+  --color-teal: #349487;
+  /* Fourth: Teal Green */
+  --color-navy: #12435F;
+  /* Bottom: Dark Blue */
+  --color-navy-dark: #0B2B3E;
+  /* Darker version for backgrounds */
+  --color-white-sage: #F7F9F2;
+  /* Very light background tint */
+
+  /* === Light Theme (Default) === */
+
+  /* --- Colors --- */
+  --primary: #266963;
+  /* Darker Teal for AA Compliance */
+  --primary-dark: #1D524D;
+  --primary-light: #4A9C91;
+  --secondary: var(--color-apricot);
+  --secondary-dark: #CC8A60;
+
+  /* --- Backgrounds --- */
+  --bg-dark: var(--color-white-sage);
+  /* Main App Background */
+  --bg-card: #FFFFFF;
+  /* Card Background */
+  --bg-hover: #F0F4E8;
+  /* Hover State */
+  --bg-input: #FFFFFF;
+
+  /* --- Text --- */
+  --text-primary: var(--color-navy);
+  --text-secondary: #405D6F;
+  /* Darker Navy-Grey */
+  --text-muted: #475569;
+  /* Darkened for AA compliance (Ratio 5.1:1 on white) */
+
+  /* --- Borders --- */
+  --border: #D1D9A0;
+  /* Stronger Sage for borders */
+  --border-light: #E2E8C0;
+  /* Sage */
+
+  /* --- States --- */
+  --success: var(--color-teal);
+  --error: var(--color-marsala);
+  --warning: var(--color-apricot);
+  --info: var(--color-navy);
+
+  /* --- Chart & Visualization Palettes --- */
+  --chart-1: var(--color-teal);
+  --chart-2: var(--color-apricot);
+  --chart-3: var(--color-marsala);
+  --chart-4: var(--color-navy);
+  --chart-5: #E2E8C0;
+  --chart-6: #FFC09F;
+
+  /* === Shadows === */
+  --shadow-sm: 0 1px 2px 0 rgba(18, 67, 95, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(18, 67, 95, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(18, 67, 95, 0.1);
+
+  /* === Shared UI Tokens === */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
-  
-  /* === Bordes redondeados === */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  
-  /* === Transiciones === */
+
+  /* === Transitions === */
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
+}
+
+[data-theme='dark'] {
+  /* === Dark Theme Overrides (UX Guardian Compliant) === */
+
+  /* --- Backgrounds --- */
+  --bg-dark: #0D1117;
+  /* Deep Navy-Gray (Ref: GitHub dark) - Avoids pure black */
+  --bg-card: #161B22;
+  /* Elevated surface (tonos de gris más claros) */
+  --bg-hover: #21262D;
+  /* Slightly lighter for interactions */
+  --bg-input: #0D1117;
+
+  /* --- Text --- */
+  --text-primary: rgba(254, 254, 250, 0.87);
+  /* Reduced opacity to prevent halation/eye fatigue */
+  --text-secondary: rgba(226, 232, 192, 0.7);
+  /* Desaturated Sage with opacity */
+  --text-muted: rgba(138, 164, 179, 0.6);
+
+  /* --- Borders --- */
+  --border: #30363D;
+  --border-light: #484F58;
+
+  /* --- Colors --- */
+  --primary: #469F91;
+  /* Desaturated Teal (A11Y & Vibration reduction) */
+  --secondary: #CEB19E;
+  /* Desaturated Apricot for dark mode */
+
+  /* --- Shadows --- */
+  /* Using subtle rings/borders for depth instead of black shadows */
+  --shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 /* === Reset y Base === */
@@ -88,18 +144,40 @@ body {
 }
 
 /* === Tipografía === */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: var(--spacing-md);
 }
 
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.5rem; }
-h5 { font-size: 1.25rem; }
-h6 { font-size: 1rem; }
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.75rem;
+}
+
+h4 {
+  font-size: 1.5rem;
+}
+
+h5 {
+  font-size: 1.25rem;
+}
+
+h6 {
+  font-size: 1rem;
+}
 
 p {
   margin-bottom: var(--spacing-md);
@@ -248,9 +326,17 @@ a:hover {
   justify-content: space-between;
 }
 
-.gap-sm { gap: var(--spacing-sm); }
-.gap-md { gap: var(--spacing-md); }
-.gap-lg { gap: var(--spacing-lg); }
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+
+.gap-md {
+  gap: var(--spacing-md);
+}
+
+.gap-lg {
+  gap: var(--spacing-lg);
+}
 
 .text-center {
   text-align: center;
@@ -270,6 +356,7 @@ a:hover {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -280,15 +367,19 @@ a:hover {
   from {
     transform: translateX(-100%);
   }
+
   to {
     transform: translateX(0);
   }
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -308,10 +399,18 @@ a:hover {
 
 /* === Responsive === */
 @media (max-width: 768px) {
-  h1 { font-size: 2rem; }
-  h2 { font-size: 1.75rem; }
-  h3 { font-size: 1.5rem; }
-  
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+
   .container {
     padding: 0 var(--spacing-md);
   }
