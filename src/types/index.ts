@@ -76,6 +76,8 @@ export interface WordCloudOptions {
     max_words: number
     min_length: number
     max_length: number
+    palette?: string
+    font?: string
 }
 
 export interface OpenTextOptions {

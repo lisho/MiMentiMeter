@@ -15,7 +15,7 @@ export function ThemeToggle() {
             title={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
             style={{
                 position: 'fixed',
-                bottom: '20px',
+                bottom: '100px',
                 left: '20px',
                 zIndex: 9999,
                 backgroundColor: 'var(--bg-card)',

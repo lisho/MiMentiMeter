@@ -5,7 +5,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Presentation, Activity, ActivityType, Session } from '@/types'
-import { createActivity, deleteActivity, createSession, deleteSession } from '../../actions'
+import { createActivity, deleteActivity, createSession, deleteSession, reactivateSession } from '../../actions'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ActivityEditor } from '@/components/presenter/ActivityEditor'
@@ -86,6 +86,17 @@ export function PresentationEditor({ presentation, initialActivities, initialSes
             const result = await deleteSession(sessionId)
             if (!result.error) {
                 setSessions(sessions.filter(s => s.id !== sessionId))
+            }
+        }
+    }
+
+    const handleReactivateSession = async (sessionId: string) => {
+        if (confirm('¿Deseas reactivar esta sesión para recibir más respuestas?')) {
+            const result = await reactivateSession(sessionId, presentation.id)
+            if (!result.error) {
+                router.push(`/presenter/live/${sessionId}`)
+            } else {
+                alert('Error al reactivar la sesión: ' + result.error)
             }
         }
     }
@@ -259,6 +270,16 @@ export function PresentationEditor({ presentation, initialActivities, initialSes
                                     >
                                         👁️ Ver Resultados
                                     </Button>
+                                    {!session.is_live && (
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={() => handleReactivateSession(session.id)}
+                                            className={styles.actionBtn}
+                                        >
+                                            🔄 Reactivar
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="secondary"
                                         size="sm"

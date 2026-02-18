@@ -10,6 +10,7 @@ import cloud from 'd3-cloud'
 import { select } from 'd3-selection'
 import { scaleLinear } from 'd3-scale'
 import { Button } from '@/components/ui/Button'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface ResultsVisualizationProps {
     activity: Activity
@@ -145,7 +146,7 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
     }
 
     return (
-        <div ref={fullscreenRef} className={styles.container} style={{ backgroundColor: 'white', borderRadius: '8px', height: '100%', overflowY: 'auto' }}>
+        <div ref={fullscreenRef} className={styles.container} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '12px', height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
             <div className={styles.header}>
                 <h3>Resultados en Tiempo Real</h3>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -158,9 +159,6 @@ export function ResultsVisualization({ activity, sessionId, initialResponses }: 
                         </svg>
                         <span>{totalResponses} respuestas</span>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Pantalla Completa">
-                        ⛶
-                    </Button>
                 </div>
             </div>
 
@@ -301,10 +299,19 @@ const PALETTES = {
     professional: ['#0f172a', '#334155', '#475569', '#64748b', '#94a3b8', '#4f46e5', '#4338ca', '#3730a3', '#312e81', '#1e1b4b']
 }
 
+// Desaturated palettes for Dark Mode (UX Guardian Compliant)
+const DARK_PALETTES = {
+    autumn: ['#6D2929', '#7A3F3F', '#844242', '#6B4B36', '#966341', '#917053', '#826A33', '#947D42', '#4F593E', '#3F4F4F'],
+    ocean: ['#2E3A59', '#32427A', '#3C57A3', '#496DBF', '#5D8AD9', '#7BA6ED', '#2E6170', '#327385', '#3C8DA1', '#7DD3E0'],
+    vibrant: ['#A35252', '#A36F52', '#A38E52', '#7DA352', '#52A37D', '#5296A3', '#526DA3', '#6D52A3', '#A3529E', '#A3526D'],
+    professional: ['#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff']
+}
+
 type PaletteName = keyof typeof PALETTES
 
 // Word Cloud Results
 function WordCloudResults({ responses, total, activity }: { responses: Response[]; total: number; activity?: Activity }) {
+    const { theme } = useTheme()
     const svgRef = useRef<SVGSVGElement>(null)
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
     const containerRef = useRef<HTMLDivElement>(null)
@@ -334,16 +341,21 @@ function WordCloudResults({ responses, total, activity }: { responses: Response[
     useEffect(() => {
         const updateDimensions = () => {
             if (containerRef.current) {
-                const { width } = containerRef.current.getBoundingClientRect()
-                // Height based on width but constrained
-                const height = Math.min(500, width * 0.6)
+                const { width, height } = containerRef.current.getBoundingClientRect()
                 setDimensions({ width, height })
             }
         }
 
+        const resizeObserver = new ResizeObserver(() => {
+            updateDimensions()
+        })
+
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current)
+        }
+
         updateDimensions()
-        window.addEventListener('resize', updateDimensions)
-        return () => window.removeEventListener('resize', updateDimensions)
+        return () => resizeObserver.disconnect()
     }, [])
 
     // Draw cloud
@@ -380,7 +392,9 @@ function WordCloudResults({ responses, total, activity }: { responses: Response[
         // Get palette from options or default to 'autumn'
         // Need to cast to any because options is strictly typed in interface but flexible in DB
         const paletteName = ((activity?.options as any)?.palette as PaletteName) || 'autumn'
-        const colors = PALETTES[paletteName] || PALETTES['autumn']
+        const basePalette = theme === 'dark' ? DARK_PALETTES : PALETTES
+        const colors = basePalette[paletteName] || basePalette['autumn']
+        const fontStyle = ((activity?.options as any)?.font as string) || 'Inter, sans-serif'
 
         // Deterministic rotation based on text hash + refreshKey for manual reload
         const getRotate = (text: string) => {
@@ -396,7 +410,7 @@ function WordCloudResults({ responses, total, activity }: { responses: Response[
             .words(words.map((d, index) => ({ text: d.text, size: fontScale(d.value), value: d.value, rank: index })))
             .padding(13) // Set to exactly 13px as requested
             .rotate((d: any) => (d.rank < 3 ? 0 : getRotate(d.text)))
-            .font('Inter, sans-serif') // Keep synchronized font for accuracy
+            .font(fontStyle) // Use dynamic font
             .fontSize((d: any) => d.size)
             .on('end', draw)
 
@@ -413,6 +427,7 @@ function WordCloudResults({ responses, total, activity }: { responses: Response[
             // UPDATE - Move existing words
             texts
                 .style('font-size', (d: any) => `${d.size}px`)
+                .style('font-family', fontStyle)
                 .style('fill', (d: any, i: number) => colors[i % colors.length])
                 .attr('transform', (d: any) => `translate(${d.x},${d.y})rotate(${d.rotate})`)
                 .style('opacity', 1);
@@ -421,7 +436,7 @@ function WordCloudResults({ responses, total, activity }: { responses: Response[
             texts.enter()
                 .append('text')
                 .style('font-size', (d: any) => `${d.size}px`)
-                .style('font-family', 'Inter, sans-serif')
+                .style('font-family', fontStyle)
                 .style('fill', (d: any, i: number) => colors[i % colors.length])
                 .attr('text-anchor', 'middle')
                 .attr('transform', (d: any) => `translate(${d.x},${d.y})rotate(${d.rotate})`)
@@ -436,33 +451,23 @@ function WordCloudResults({ responses, total, activity }: { responses: Response[
     }, [words, dimensions, refreshKey, activity])
 
     return (
-        <div className={styles.wordCloudContainer} style={{ position: 'relative', width: '100%' }}>
+        <div className={styles.wordCloudContainer}>
             <div
                 ref={containerRef}
-                style={{
-                    width: '100%',
-                    minHeight: '400px',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    backgroundColor: 'var(--bg-card)',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    boxShadow: 'var(--shadow-sm)',
-                    border: '1px solid var(--border)'
-                }}
+                className={styles.wordCloud}
             >
                 <svg ref={svgRef} />
-            </div>
-            <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setRefreshKey(prev => prev + 1)}
-                    title="Recargar nube"
-                    style={{ backgroundColor: 'var(--bg-card)', backdropFilter: 'blur(4px)', border: '1px solid var(--border)' }}
-                >
-                    🔄
-                </Button>
+                <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setRefreshKey(prev => prev + 1)}
+                        title="Recargar nube"
+                        style={{ backgroundColor: 'var(--bg-card)', backdropFilter: 'blur(4px)', border: '1px solid var(--border)' }}
+                    >
+                        🔄
+                    </Button>
+                </div>
             </div>
         </div>
     )

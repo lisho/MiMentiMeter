@@ -120,7 +120,7 @@
     justify-content: center;
     width: 28px;
     height: 28px;
-    background: #6366f1;
+    background: var(--primary);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -164,12 +164,14 @@
 }
 
 .activityItem:hover {
-    background: rgba(99, 102, 241, 0.1);
+    background: var(--bg-hover);
+    border-color: var(--primary);
 }
 
 .activityItem.selected {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: #6366f1;
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
 }
 
 .activityIndex {
@@ -215,7 +217,7 @@
 /* Main Content */
 .main {
     flex: 1;
-    background: var(--bg-dark);
+    background: var(--bg-card);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
     overflow-y: auto;
@@ -278,7 +280,7 @@
     max-width: 1800px;
     margin: 0 auto;
     padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-3xl);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--border);
 }
 
 .sectionTitle {
@@ -300,9 +302,10 @@
 
 .viewToggle {
     display: flex;
-    background: rgba(30, 41, 59, 0.8);
+    background: var(--bg-hover);
     padding: 3px;
     border-radius: var(--radius-md);
+    border: 1px solid var(--border);
 }
 
 .toggleBtn {
@@ -320,8 +323,8 @@
 }
 
 .toggleBtn.active {
-    background: rgba(99, 102, 241, 0.2);
-    color: #818cf8;
+    background: var(--primary);
+    color: white;
 }
 
 .sessionsGrid {
@@ -338,8 +341,8 @@
 }
 
 .sessionCard {
-    background: rgba(15, 23, 42, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
     padding: var(--spacing-lg) !important;
     display: flex;
     flex-direction: column;
@@ -380,7 +383,8 @@
 .sessionCard:hover,
 .sessionListItem:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.15);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
 }
 
 .sessionHeader {
@@ -401,8 +405,9 @@
 }
 
 .sessionCode strong {
-    color: #818cf8;
+    color: var(--primary);
     font-family: inherit;
+    font-weight: 700;
 }
 
 .sessionDate {
@@ -418,14 +423,15 @@
 
 .statItem {
     font-size: 0.75rem;
-    color: var(--text-muted);
-    background: rgba(255, 255, 255, 0.03);
-    padding: 2px 8px;
+    color: var(--text-primary);
+    background: var(--bg-hover);
+    padding: 4px 10px;
     border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
 }
 
 .statItem strong {
-    color: #818cf8;
+    color: var(--primary);
 }
 
 .sessionStatus {
@@ -462,17 +468,18 @@
 }
 
 .statusEnded {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-hover);
     color: var(--text-muted);
     font-size: 0.7rem;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
     height: fit-content;
 }
 
 .sessionActions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: var(--spacing-sm);
     margin-top: var(--spacing-md);
     border-top: none !important;
@@ -484,16 +491,18 @@
 }
 
 .actionBtn {
-    background: rgba(30, 41, 59, 0.8) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: var(--bg-hover) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
     font-size: 0.75rem !important;
     padding: 0.5rem !important;
     height: auto !important;
 }
 
 .actionBtn:hover {
-    background: rgba(99, 102, 241, 0.2) !important;
-    border-color: #818cf8 !important;
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: white !important;
 }
 
 @media (max-width: 768px) {
@@ -514,8 +523,8 @@
 .footer {
     margin-top: auto;
     padding: var(--spacing-2xl) 0 var(--spacing-xl);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(15, 23, 42, 0.2);
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
 }
 
 .footerContent {

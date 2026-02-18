@@ -200,6 +200,42 @@ export async function endSession(sessionId: string) {
     return { error: null }
 }
 
+export async function reactivateSession(sessionId: string, presentationId: string) {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'No autenticado' }
+    }
+
+    // Close any other live sessions for this presentation first
+    await supabase
+        .from('sessions')
+        .update({
+            is_live: false,
+            ended_at: new Date().toISOString()
+        })
+        .eq('presentation_id', presentationId)
+        .eq('is_live', true)
+
+    // Reactivate this session
+    const { error } = await supabase
+        .from('sessions')
+        .update({
+            is_live: true,
+            ended_at: null,
+        })
+        .eq('id', sessionId)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    revalidatePath('/presenter')
+    revalidatePath(`/presenter/presentation/${presentationId}`)
+    return { error: null }
+}
+
 export async function updateCurrentActivity(sessionId: string, activityIndex: number) {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()

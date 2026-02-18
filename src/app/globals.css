@@ -82,6 +82,11 @@
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
+
+  /* === Glassmorphism (Light) === */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(209, 217, 160, 0.4);
+  --glass-blur: blur(8px);
 }
 
 [data-theme='dark'] {
@@ -113,11 +118,16 @@
   --secondary: #CEB19E;
   /* Desaturated Apricot for dark mode */
 
+  /* === Glassmorphism (Dark) === */
+  --glass-bg: rgba(22, 27, 34, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(12px);
+
   /* --- Shadows --- */
-  /* Using subtle rings/borders for depth instead of black shadows */
-  --shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+  /* Using subtle rings/borders for depth instead of heavy black shadows in dark mode */
+  --shadow-sm: 0 1px 1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 /* === Reset y Base === */

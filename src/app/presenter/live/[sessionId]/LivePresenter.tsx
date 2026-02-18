@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Session, Presentation, Activity, ActivityType } from '@/types'
 import { endSession, updateCurrentActivity } from '../../actions'
@@ -41,6 +41,7 @@ export function LivePresenter({ session, presentation, activities }: LivePresent
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
     const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('connecting')
     const [mounted, setMounted] = useState(false)
+    const fullscreenRef = useRef<HTMLDivElement>(null)
 
     const currentActivity = activities[currentIndex] || null
     const joinUrl = typeof window !== 'undefined'
@@ -206,8 +207,18 @@ export function LivePresenter({ session, presentation, activities }: LivePresent
         setShowExportMenu(false)
     }
 
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            fullscreenRef.current?.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
     return (
-        <div className={styles.container}>
+        <div ref={fullscreenRef} className={styles.container}>
             {/* Top Bar */}
             <header className={styles.header}>
                 <div className={styles.headerLeft}>
@@ -281,6 +292,17 @@ export function LivePresenter({ session, presentation, activities }: LivePresent
                             </div>
                         )}
                     </div>
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={toggleFullscreen}
+                        title="Pantalla Completa"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                        </svg>
+                        Presentar
+                    </Button>
                     <Button variant="secondary" onClick={handleEndSession}>
                         Finalizar Sesión
                     </Button>

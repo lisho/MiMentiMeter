@@ -75,6 +75,9 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
     const [palette, setPalette] = useState<string>(
         'palette' in activity.options ? (activity.options as any).palette : 'autumn'
     )
+    const [font, setFont] = useState<string>(
+        'font' in activity.options ? (activity.options as any).font : 'Inter, sans-serif'
+    )
 
     const [saving, setSaving] = useState(false)
     const [hasChanges, setHasChanges] = useState(false)
@@ -87,6 +90,7 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         setQuestion(activity.question)
         if (activity.type === 'word_cloud') {
             setPalette('palette' in activity.options ? (activity.options as any).palette : 'autumn')
+            setFont('font' in activity.options ? (activity.options as any).font : 'Inter, sans-serif')
         }
         // Note: Resetting options/images state on activity switch usually happens via key prop on component
     }, [activity.id, activity.settings.max_responses_per_participant, activity.question, activity.options, activity.type])
@@ -173,7 +177,8 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
         } else if (activity.type === 'word_cloud') {
             updatedOptions = {
                 ...activity.options,
-                palette
+                palette,
+                font
             }
         }
 
@@ -312,20 +317,37 @@ export function ActivityEditor({ activity, onUpdate, onDelete }: ActivityEditorP
             )}
 
             {activity.type === 'word_cloud' && (
-                <div className={styles.field}>
-                    <label>Paleta de Color</label>
-                    <select
-                        className="input"
-                        value={palette}
-                        onChange={(e) => { setPalette(e.target.value); setHasChanges(true); }}
-                        style={{ height: '40px' }}
-                    >
-                        <option value="autumn">🍂 Otoño (Cálido)</option>
-                        <option value="ocean">🌊 Océano (Azules)</option>
-                        <option value="vibrant">🌈 Vibrante (Multicolor)</option>
-                        <option value="professional">🏢 Profesional (Grises/Azul)</option>
-                    </select>
-                </div>
+                <>
+                    <div className={styles.field}>
+                        <label>Paleta de Color</label>
+                        <select
+                            className="input"
+                            value={palette}
+                            onChange={(e) => { setPalette(e.target.value); setHasChanges(true); }}
+                            style={{ height: '40px' }}
+                        >
+                            <option value="autumn">🍂 Otoño (Cálido)</option>
+                            <option value="ocean">🌊 Océano (Azules)</option>
+                            <option value="vibrant">🌈 Vibrante (Multicolor)</option>
+                            <option value="professional">🏢 Profesional (Grises/Azul)</option>
+                        </select>
+                    </div>
+                    <div className={styles.field}>
+                        <label>Tipografía</label>
+                        <select
+                            className="input"
+                            value={font}
+                            onChange={(e) => { setFont(e.target.value); setHasChanges(true); }}
+                            style={{ height: '40px' }}
+                        >
+                            <option value="Inter, sans-serif">Inter (Moderno)</option>
+                            <option value="'Times New Roman', Times, serif">Serif (Clásico)</option>
+                            <option value="'Courier New', Courier, monospace">Monospace (Técnico)</option>
+                            <option value="'Comic Sans MS', cursive, sans-serif">Comic (Divertido)</option>
+                            <option value="Impact, Charcoal, sans-serif">Impact (Grueso)</option>
+                        </select>
+                    </div>
+                </>
             )}
 
             {activity.type === 'scale' && (
